@@ -62,7 +62,7 @@
 
 Celem projektu jest stworzenie aplikacji okienkowej w języku Java (Swing), która pozwala użytkownikowi końcowemu wczytać graf planarny, uruchomić wybrany algorytm wyznaczania położeń węzłów, zwizualizować wynik oraz zapisać współrzędne do pliku. Program pełni rolę warstwy interfejsu użytkownika dla modułu obliczeniowego i zachowuje zgodność formatów danych z częścią C.
 
-W aplikacji przewidziano co najmniej dwa algorytmy rozmieszczania węzłów:
+W aplikacji przewidziano dwa algorytmy rozmieszczania węzłów:
 
 - Fruchterman-Reingold (metoda siłowa),
 - Tutte Embedding (metoda barycentryczna).
@@ -87,13 +87,12 @@ Aplikacja jest programem okienkowym Swing sterowanym zdarzeniami. Główne okno 
 - pasek menu,
 - centralny komponent rysujący graf,
 - prawy panel narzędziowy,
-- pasek statusu.
 
 == Układ sekcji GUI
 
 Interfejs jest podzielony na dwa główne obszary:
 
-- Sekcja górna (pasek menu): pełne sterowanie aplikacją, w tym operacje plikowe, wybór algorytmu, konfiguracja i ustawienia widoku.
+- Sekcja górna (pasek menu): zarządznie plikami, dostęp do pomocy i informacji o programie.
 - Sekcja główna: duży obszar rysowania prezentujący aktualny graf oraz boczny panel narzędziowy.
 
 Sekcja wizualizacji zawiera interaktywną wizualizację i obsługuje:
@@ -118,7 +117,7 @@ Panel narzędziowy (po prawej stronie) zawiera:
 
 - wybór algorytmu (`fruchterman` lub `tutte`),
 - parametry obliczeń (iteracje, temperatura początkowa, rozmiar obszaru),
-- przyciski: Uruchom, Dopasuj do okna, Powiększ, Pomniejsz, Zastosuj widok
+- przyciski: Uruchom, Dopasuj do okna, Powiększ, Pomniejsz, Zastosuj widok, Reset
 - przełączniki widoczności: etykiety węzłów, etykiety krawędzi, wagi,
 - tryb edycji umożliwiający ręczne przesuwanie węzłów myszą.
 
@@ -263,18 +262,25 @@ Maksymalne przesunięcie ogranicza temperatura $T$, malejąca w kolejnych iterac
 
 ```text
 Algorytm Fruchterman-Reingold
-Wejście: G = (V, E), iteracje K
-Wyjście: Pozycje pos[v] dla v z V
+Wejście: G = (V, E), iteracje K, temperatura T0, rozmiar size
+Wyjście: Pozycje pos[v] dla każdego wierzchołka v w V
 
-1: inicjalizuj losowo pos[v] w obszarze [0, size] x [0, size]
-2: oblicz k
-3: for i <- 1..K do
-4:    oblicz siły odpychania dla par wierzchołków
-5:    oblicz siły przyciągania dla krawędzi z uwzględnieniem wag
-6:    zaktualizuj pozycje z ograniczeniem temperatury
-7:    ogranicz pozycje do obszaru roboczego
-8:    schłodź temperaturę
-9: end for
+1: inicjalizuj T := T0
+2: dla każdego wierzchołka v: pos[v] := losowa pozycja [0, size] x [0, size]
+3: oblicz k := sqrt(size^2 / |V|)
+4: for i := 1 to K do
+5:    dla każdej pary wierzchołków (u, v):
+6:        oblicz wektor d := pos[v] - pos[u], odległość dist := |d|
+7:        sila[v] += (d / dist) * k^2 / dist  (odpychanie)
+8:    dla każdej krawędzi (u, v) z wagą w:
+9:        oblicz wektor d := pos[v] - pos[u], odległość dist := |d|
+10:       sila[v] -= (d / dist) * w * dist^2 / k  (przyciąganie)
+11:   dla każdego wierzchołka v:
+12:       delta := min(|sila[v]|, T)
+13:       pos[v] := pos[v] + (sila[v] / |sila[v]|) * delta
+14:       ogranicz pos[v] do [0, size] x [0, size]
+15:   T := T * 0.95  (schłodzenie)
+16: end for
 ```
 
 == Algorytm Osadzania Tuttego (Tutte Embedding)
@@ -293,17 +299,44 @@ W praktyce stosowana jest iteracyjna relaksacja aż do osiągnięcia zbieżnośc
 
 ```text
 Algorytm Tutte Embedding
-Wejście: Graf G = (V, E)
-Wyjście: Pozycje pos[v] dla v z V
+Wejście: Graf G = (V, E), iteracje K, próg zbieżności eps
+Wyjście: Pozycje pos[v] dla każdego wierzchołka v w V
 
-1: wyznacz cykl brzegowy B (lub użyj wariantu zapasowego)
-2: rozmieść B równomiernie na brzegu kwadratu
-3: ustaw wierzchołki wewnętrzne w centrum obszaru
-4: iteracyjnie aktualizuj pozycje jako średnią ważoną sąsiadów
-5: zatrzymaj po osiągnięciu progu zbieżności lub limitu iteracji
+1: I := zbiór wierzchołków wewnętrznych, B := zbiór wierzchołków brzegowych
+2: rozmieść wierzchołki z B równomiernie na brzegu kwadratu [0, size]^2
+3: dla każdego wierzchołka v w I: pos[v] := (size/2, size/2)
+4: for iteracja := 1 to K do
+5:    max_delta := 0
+6:    dla każdego wierzchołka v w I:
+7:        suma := (0, 0)
+8:        waga_suma := 0
+9:        dla każdego sąsiada u wierzchołka v:
+10:           waga := waga krawędzi (v, u), domyślnie 1
+11:           suma := suma + waga * pos[u]
+12:           waga_suma := waga_suma + waga
+13:       nowa_pos[v] := suma / waga_suma
+14:       delta := |nowa_pos[v] - pos[v]|  (zmiana pozycji)
+15:       max_delta := max(max_delta, delta)
+16:   pos[v] := nowa_pos[v] dla wszystkich v w I
+17:   jeśli max_delta < eps: zatrzymaj (osiągnięta zbieżność)
+18: end for
 ```
 
-= Porównanie Algorytmów
+= Charakterystyka Systemu
+
+== Obsługa Sytuacji Wyjątkowych
+
+Program informuje użytkownika za pomocą okienek kontekstowych. Aplikacja wykorzystuje okienka kontekstowe do interaktywnej komunikacji z użytkownikiem i ułatwienia nawigacji po interfejsie.
+
+Użytkownik jest informowany o błędach i nieprawidłowych operacjach poprzez okienka kontekstowe, które wyświetlają czytelny komunikat o problemie i umożliwiają anulowanie operacji lub wskazanie wymaganych poprawek.
+
+== Ograniczenia Systemu
+
+- Dla dużych grafów interaktywność może maleć z powodu kosztu przeliczeń i odświeżania widoku.
+- Dla algorytmu Tuttego jakość osadzenia zależy od poprawnego wyboru wierzchołków brzegowych; dla trudnych przypadków stosowany jest wariant zapasowy.
+- Format binarny wymaga ścisłej zgodności typów i kolejności pól (`int`, `double`, `double`) oraz obecności nagłówka z liczbą węzłów.
+
+== Porównanie algorytmów
 
 - Typ algorytmu:
   Fruchterman-Reingold - symulacja fizyczna (iteracyjny),
@@ -317,35 +350,3 @@ Wyjście: Pozycje pos[v] dla v z V
 - Stabilność wyniku:
   Fruchterman-Reingold - zależna od inicjalizacji,
   Tutte Embedding - zasadniczo deterministyczna przy tych samych danych wejściowych.
-
-= Obsługa Sytuacji Wyjątkowych
-
-Program informuje użytkownika komunikatem i zachowuje spójny stan interfejsu. Warstwa obliczeniowa zwraca kody statusu zgodne z implementacją C:
-
-- Kod 1 (`ARGUMENTS_ERROR`): błąd parametrów wejściowych (np. nieznana opcja, nieznany algorytm/format, niedodatnie iteracje/temperatura/rozmiar).
-- Kod 2 (`FILE_ERROR`): błąd dostępu do pliku wejściowego/wyjściowego.
-- Kod 3 (`INPUT_FORMAT_ERROR`): niepoprawny format danych wejściowych.
-- Kod 4 (`ALGORITHM_ERROR`): błąd działania algorytmu (np. brak możliwości wyznaczenia poprawnego cyklu brzegowego).
-- Kod 5 (`MEMORY_ERROR`): błąd alokacji pamięci.
-
-Dodatkowe sytuacje wyjątkowe po stronie GUI:
-
-- brak uprawnień do zapisu w wybranej lokalizacji,
-- próba uruchomienia obliczeń bez wczytanego grafu,
-- próba odczytu pliku binarnego o niezgodnej strukturze,
-- anulowanie operacji wyboru pliku przez użytkownika.
-
-Przykładowe komunikaty:
-
-- `Error: Unknown algorithm '...'. Use 'fruchterman' or 'tutte'.`
-- `Error: Unknown format '...'. Use 'text' or 'binary'.`
-- `Error: Invalid iteration value`
-- `Error: Invalid temperature value`
-- `Error: Invalid size value`
-- `Error: Cannot open input file: ...`
-
-= Ograniczenia Systemu
-
-- Dla dużych grafów interaktywność może maleć z powodu kosztu przeliczeń i odświeżania widoku.
-- Dla algorytmu Tuttego jakość osadzenia zależy od poprawnego wyboru wierzchołków brzegowych; dla trudnych przypadków stosowany jest wariant zapasowy.
-- Format binarny wymaga ścisłej zgodności typów i kolejności pól (`int`, `double`, `double`) oraz obecności nagłówka z liczbą węzłów.
