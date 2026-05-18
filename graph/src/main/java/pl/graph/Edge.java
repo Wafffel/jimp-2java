@@ -1,6 +1,7 @@
 package pl.graph;
 
 public class Edge {
+
     public int firstNodeIndex;
     public int secondNodeIndex;
     public double weight;
@@ -15,7 +16,7 @@ public class Edge {
 
     @Override
     public String toString() {
-        return String.format("Edge(%d -> %d, weight=%.2f, label=%s)", 
-            firstNodeIndex, secondNodeIndex, weight, label);
+        return String.format("Edge(%d -> %d, weight=%.2f, label=%s)",
+                firstNodeIndex, secondNodeIndex, weight, label);
     }
 }
