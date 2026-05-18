@@ -60,7 +60,7 @@
 
 == Cel dokumentu
 
-Celem dokumentacji implementacyjnej jest przedstawienie szczegółów budowy warstwy obliczeniowej aplikacji w języku Java do wyznaczania współrzędnych węzłów grafu planarnego. Dokument opisuje strukturę kodu, model danych, formaty wejścia i wyjścia oraz obsługę błędów na podstawie aktualnej implementacji. Moduł GUI opisany jest jako plan docelowy i nie zawiera kodu uruchomieniowego.
+Celem dokumentacji implementacyjnej jest przedstawienie szczegółów budowy aplikacji GUI w języku Java (Swing) do wyznaczania współrzędnych węzłów grafu planarnego. Dokument opisuje strukturę kodu, model danych, formaty wejścia i wyjścia oraz obsługę błędów na podstawie aktualnej implementacji, z naciskiem na warstwę obliczeniową i jej integrację z GUI.
 
 == Zakres
 
@@ -86,10 +86,10 @@ Implementacja znajduje się w pakiecie `pl.graph` i składa się z następujący
 - `Neighbor` - pojedynczy element listy sąsiadów,
 - `Fruchterman` - algorytm siłowy wyznaczania układu,
 - `Tutte` - osadzenie Tutte na podstawie zredukowanej macierzy Laplace'a,
-- `Gui` - planowany moduł interfejsu graficznego (Swing),
+- `Gui` - moduł interfejsu graficznego (Swing),
 - `ExitCodes` - wspólne kody statusu dla warstwy obliczeniowej.
 
-Dodatkowo planowany jest moduł GUI oparty o Swing, który nie jest jeszcze zaimplementowany, ale jego docelowa struktura i odpowiedzialności opisane są poniżej.
+Moduł GUI oparty o Swing odpowiada za warstwę prezentacji, obsługę zdarzeń i sterowanie wywołaniami algorytmów.
 
 == Przepływ danych
 
@@ -191,8 +191,6 @@ Najważniejsze metody publiczne:
 - `ExitCodes saveGraphAsBinary(Graph graph, String path)`
 - `int getNodeIndex(Graph graph, int nodeId)`
 
-Uwaga: odczyt wejścia binarnego nie jest jeszcze zaimplementowany w warstwie obliczeniowej. Format binarny jest jednak zdefiniowany i zgodny z dokumentacją funkcjonalną; planowane jest dodanie dedykowanej metody I/O w module GUI/IO.
-
 Fragment mapowania identyfikatora na indeks (wyszukiwanie binarne):
 
 ```java
@@ -270,7 +268,6 @@ Reguły parsowania:
 - `label` jest skracany do 32 znaków,
 - `nodeA`, `nodeB` muszą być liczbami całkowitymi nieujemnymi,
 - `weight` jest opcjonalny, domyślnie `1.0`,
-- linie niepoprawne są ignorowane.
 
 Fragment filtrowania komentarzy i pustych linii:
 
@@ -299,22 +296,6 @@ Zgodny z formatem z części C i dokumentacją funkcjonalną:
   - `double`: współrzędna Y.
 
 Kolejność pól w rekordzie jest stała. W implementacji Java zapisy i odczyty są wykonywane jawnie w kolejności little-endian, aby zachować zgodność z eksportem z modułu C.
-
-Szkic odczytu binarnego (planowana implementacja):
-
-```java
-try (DataInputStream dis = new DataInputStream(
-        new BufferedInputStream(new FileInputStream(path)))) {
-    int count = Integer.reverseBytes(dis.readInt());
-    Graph graph = new Graph(count, 0);
-    for (int i = 0; i < count; i++) {
-        int id = Integer.reverseBytes(dis.readInt());
-        double x = Double.longBitsToDouble(Long.reverseBytes(dis.readLong()));
-        double y = Double.longBitsToDouble(Long.reverseBytes(dis.readLong()));
-        graph.nodes[i] = new Node(id, x, y);
-    }
-}
-```
 
 == Format wyjściowy (tekst)
 
@@ -385,7 +366,7 @@ Algorytm używa modelu siłowego z ograniczeniem do kwadratu o boku `size`:
 
 Wzory użyte w kodzie:
 
-- $k = sqrt("area" / |V|)$, gdzie $"area" = "size" dot "size"$
+- $k = sqrt(frac("area", |V|))$, gdzie $"area" = "size" dot "size"$
 - $f_r = (k^2) / d$
 - $f_a = w dot (d^2) / k$
 
@@ -614,3 +595,33 @@ Najważniejsze scenariusze błędowe:
 - osobliwość układu równań w Tutte (`NUMERICAL_ERROR`),
 - błędy zapisu plików (`OUTPUT_WRITE_ERROR`).
 - niezgodny format binarny (niepełny plik lub błędny nagłówek) - błąd I/O lub walidacji.
+
+= Kompilacja i uruchamianie
+
+== Wymagania
+
+- JDK 17 (zgodnie z konfiguracją `pom.xml`),
+- Apache Maven 3.x.
+
+== Kompilacja
+
+```
+mvn -f graph/pom.xml clean package
+```
+
+Po kompilacji klasy znajdują się w `graph/target/classes`.
+
+== Uruchamianie GUI (start z `Main`)
+
+Aplikacja GUI uruchamiana jest przez klasę `pl.graph.Main`, która inicjuje warstwę Swing.
+
+Uruchomienie z linii poleceń:
+
+```
+java -cp graph/target/classes pl.graph.Main
+```
+
+Uruchomienie z IDE:
+
+- konfiguracja Run/Debug: `pl.graph.Main`,
+- working directory: katalog główny projektu.
