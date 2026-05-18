@@ -1,13 +1,7 @@
 package pl.graph;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 public class Main {
 
@@ -86,10 +80,9 @@ public class Main {
             }
             result = binaryOutput ? Graph.saveGraphAsBinary(graph, outputPath) : Graph.saveGraphAsText(graph, outputPath);
         } else {
-            Fruchterman.Graph fruchtermanGraph = convertToFruchtermanGraph(graph);
-            Fruchterman fruchterman = new Fruchterman(size, iterations, fruchtermanGraph);
-            fruchterman.layout(fruchtermanGraph);
-            result = binaryOutput ? Graph.saveGraphAsBinary(convertToPlainGraph(fruchtermanGraph), outputPath) : saveText(fruchtermanGraph, outputPath);
+            Fruchterman fruchterman = new Fruchterman(size, iterations, graph);
+            fruchterman.layout(graph);
+            result = binaryOutput ? Graph.saveGraphAsBinary(graph, outputPath) : Graph.saveGraphAsText(graph, outputPath);
         }
 
         if (result != ExitCodes.SUCCESS) {
@@ -122,59 +115,6 @@ public class Main {
             System.err.println("Invalid " + name + ": " + value);
             System.exit(ExitCodes.ARGUMENTS_ERROR.code());
             return -1;
-        }
-    }
-
-    private static Fruchterman.Graph convertToFruchtermanGraph(Graph graph) {
-        Fruchterman.Graph result = new Fruchterman.Graph();
-        Map<Integer, String> indexToLabel = new HashMap<>();
-        for (Node node : graph.nodes) {
-            String label = String.valueOf(node.id);
-            indexToLabel.put(node.id, label);
-            result.addNode(label);
-        }
-        for (Edge edge : graph.edges) {
-            String sourceLabel = indexToLabel.get(graph.nodes[edge.firstNodeIndex].id);
-            String targetLabel = indexToLabel.get(graph.nodes[edge.secondNodeIndex].id);
-            result.addEdge(sourceLabel, targetLabel);
-        }
-        return result;
-    }
-
-    private static Graph convertToPlainGraph(Fruchterman.Graph fruchtermanGraph) {
-        int nodeCount = fruchtermanGraph.getNodes().size();
-        Graph output = new Graph(nodeCount, 0);
-        output.nodes = new Node[nodeCount];
-        output.edges = new Edge[0];
-        output.nodesCount = nodeCount;
-        output.edgesCount = 0;
-
-        for (int i = 0; i < nodeCount; i++) {
-            Fruchterman.Node fNode = fruchtermanGraph.getNodes().get(i);
-            int nodeId = parseNodeId(fNode.getLabel());
-            output.nodes[i] = new Node(nodeId, fNode.getX(), fNode.getY());
-        }
-        return output;
-    }
-
-    private static int parseNodeId(String label) {
-        try {
-            return Integer.parseInt(label);
-        } catch (NumberFormatException e) {
-            return label.hashCode();
-        }
-    }
-
-    private static ExitCodes saveText(Fruchterman.Graph fruchtermanGraph, String outputPath) {
-        Path output = Path.of(outputPath);
-        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(output, StandardCharsets.UTF_8))) {
-            for (Fruchterman.Node node : fruchtermanGraph.getNodes()) {
-                writer.printf(Locale.ROOT, "%s %.6f %.6f%n", node.getLabel(), node.getX(), node.getY());
-            }
-            return ExitCodes.SUCCESS;
-        } catch (IOException e) {
-            System.err.println("Error: Cannot write output file: " + outputPath);
-            return ExitCodes.OUTPUT_WRITE_ERROR;
         }
     }
 
