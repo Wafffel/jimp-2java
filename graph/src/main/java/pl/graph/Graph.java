@@ -151,4 +151,63 @@ public class Graph {
         int result = Arrays.binarySearch(graph.nodes, key);
         return result < 0 ? -1 : result;
     }
+
+    public static ExitCodes loadCoordinatesFromText(Graph graph, String path) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            boolean any = false;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                int commentIndex = line.indexOf('#');
+                if (commentIndex >= 0) line = line.substring(0, commentIndex).trim();
+                if (line.isEmpty()) continue;
+                String[] parts = line.split("\\s+");
+                if (parts.length < 3) continue;
+                try {
+                    int id = Integer.parseInt(parts[0]);
+                    double x = Double.parseDouble(parts[1]);
+                    double y = Double.parseDouble(parts[2]);
+                    int idx = getNodeIndex(graph, id);
+                    if (idx >= 0) {
+                        graph.nodes[idx].x = x;
+                        graph.nodes[idx].y = y;
+                        any = true;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // skip invalid line
+                }
+            }
+            return any ? ExitCodes.SUCCESS : ExitCodes.INPUT_FORMAT_ERROR;
+        } catch (FileNotFoundException e) {
+            return ExitCodes.FILE_ERROR;
+        } catch (IOException e) {
+            return ExitCodes.FILE_ERROR;
+        }
+    }
+
+    public static ExitCodes loadCoordinatesFromBinary(Graph graph, String path) {
+        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(path)))) {
+            int count = Integer.reverseBytes(dis.readInt());
+            boolean any = false;
+            for (int i = 0; i < count; i++) {
+                int id = Integer.reverseBytes(dis.readInt());
+                long xl = Long.reverseBytes(dis.readLong());
+                long yl = Long.reverseBytes(dis.readLong());
+                double x = Double.longBitsToDouble(xl);
+                double y = Double.longBitsToDouble(yl);
+                int idx = getNodeIndex(graph, id);
+                if (idx >= 0) {
+                    graph.nodes[idx].x = x;
+                    graph.nodes[idx].y = y;
+                    any = true;
+                }
+            }
+            return any ? ExitCodes.SUCCESS : ExitCodes.INPUT_FORMAT_ERROR;
+        } catch (FileNotFoundException e) {
+            return ExitCodes.FILE_ERROR;
+        } catch (IOException e) {
+            return ExitCodes.FILE_ERROR;
+        }
+    }
 }
