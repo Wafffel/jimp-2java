@@ -1,0 +1,149 @@
+classDiagram
+    Main --> Gui : creates
+    Gui --> GraphPanel : manages
+    GraphPanel --> Graph : uses
+
+    Graph --> Node : contains
+    Graph --> Edge : contains
+    Graph --> AdjacencyList : uses
+
+    AdjacencyList --> Neighbor : contains
+
+    GraphPanel --> Graph : renders
+
+    FruchtermanLayout --|> LayoutAlgorithm
+    TutteLayout --|> LayoutAlgorithm
+
+    class Main {
+        -main(String[]) void
+    }
+
+    class Gui {
+        -frame: JFrame
+        -graphPanel: GraphPanel
+        +createAndShowGui() void
+        +createMenuBar() JMenuBar
+        +createToolPanel() JPanel
+        -getGraph() Graph
+    }
+
+    class GraphPanel {
+        -graph: Graph
+        -scale: double
+        -offsetX: double
+        -offsetY: double
+        -showLabels: boolean
+        -editMode: boolean
+        -dragNodeIndex: int
+        -lastMouse: Point
+        +setGraph(Graph) void
+        +getGraph() Graph
+        +setShowLabels(boolean) void
+        +setEditMode(boolean) void
+        +zoomIn() void
+        +zoomOut() void
+        +fitToWindow() void
+        +paintComponent(Graphics) void
+        -findNodeNear(double, double) int
+    }
+
+    class Graph {
+        +nodes: Node[]
+        +nodesCount: int
+        +edges: Edge[]
+        +edgesCount: int
+        +Graph(int, int)
+        +loadGraph(String) Graph
+        +loadCoordinatesFromText(Graph, String) ExitCodes
+        +loadCoordinatesFromBinary(Graph, String) ExitCodes
+        +saveGraphAsText(Graph, String) ExitCodes
+        +saveGraphAsBinary(Graph, String) ExitCodes
+        +getNodeIndex(Graph, int) int
+    }
+
+    class Node {
+        +id: int
+        +x: double
+        +y: double
+        +Node(int)
+        +Node(int, double, double)
+        +compareTo(Node) int
+        +toString() String
+    }
+
+    class Edge {
+        +firstNodeIndex: int
+        +secondNodeIndex: int
+        +weight: double
+        +label: String
+        +Edge(int, int, double, String)
+        +toString() String
+    }
+
+    class AdjacencyList {
+        +adjacencyList: Neighbor[]
+        +nodesCount: int
+        +degrees: int[]
+        +nodeIds: int[]
+        +AdjacencyList(int)
+        +createAdjacencyList(Graph) AdjacencyList
+    }
+
+    class Neighbor {
+        +nodeIndex: int
+        +weight: double
+        +next: Neighbor
+        +Neighbor(int, double)
+        +toString() String
+    }
+
+    class FruchtermanLayout {
+        -size: double
+        -area: double
+        -k: double
+        -iterations: int
+        -initialTemperature: double
+        -temperature: double
+        -random: Random
+        +Fruchterman(double, int, Graph)
+        +layout(Graph) void
+        -initializeRandomPositions(Graph) void
+        -applyRepulsiveForce(...) void
+        -applyAttractiveForce(...) void
+        -updatePosition(...) void
+        -repulsiveForce(double) double
+        -attractiveForce(double) double
+        -cool(int) double
+    }
+
+    class TutteLayout {
+        +runTutte(Graph, double, int) ExitCodes
+        -findBoundaryCycle(AdjacencyList) int[]
+        -findBoundaryCyclePerimeter(AdjacencyList) int[]
+        -placeBoundaryOnUnitCircle(Graph, int[]) void
+        -gaussianElimination(double[][], double[]) double[]
+        -deepCopy(double[][]) double[][]
+        -scaleGraph(Graph, double) void
+        -placeSmallGraph(Graph) void
+    }
+
+    class ExitCodes {
+        SUCCESS
+        ARGUMENTS_ERROR
+        FILE_ERROR
+        INPUT_FORMAT_ERROR
+        ALGORITHM_ERROR
+        INVALID_ITERATION_COUNT
+        OUTPUT_WRITE_ERROR
+        UNKNOWN_ARGUMENT
+        MEMORY_ERROR
+        EMPTY_OR_INVALID_GRAPH
+        TUTTE_ASSUMPTIONS_ERROR
+        NUMERICAL_ERROR
+        INPUT_TOO_LARGE
+    }
+
+    class LayoutAlgorithm {
+        <<interface>>
+        +layout(Graph) void
+    }
