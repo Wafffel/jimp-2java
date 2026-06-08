@@ -70,7 +70,7 @@ Aplikacja obsługuje wczytywanie danych z formatów tekstowych i binarnych, zmia
 - opis interfejsu użytkownika,
 - formaty danych wejściowych i wyjściowych,
 - dokumentację poszczególnych modułów i algorytmów,
-- ograniczenia i propozycje rozwoju.
+- ograniczenia
 
 == Cel projektu
 
@@ -92,7 +92,7 @@ Aplikacja Swing udostępnia następujące funkcje:
 - wczytanie grafu z pliku tekstowego,
 - wczytanie precomputed współrzędnych z pliku tekstowego,
 - wczytanie precomputed współrzędnych z pliku binarnego,
-- automatyczne dopasowanie widoku do okna (fit-to-window),
+- automatyczne dopasowanie widoku do okna,
 - zoom in/out przy użyciu kółka myszy,
 - przesuwanie widoku poprzez przeciąganie myszą,
 - edycja współrzędnych wierzchołków w trybie edit mode,
@@ -146,7 +146,7 @@ Interfejs składa się z trzech głównych komponentów:
 
 1. Wczytanie grafu,
 2. Wczytanie precomputed współrzędnych z pliku C (Plik → Wczytaj współrzędne (tekstowe)),
-3. Aktywowanie trybu edit (Panel narzędziowy → Edit Mode),
+3. Aktywowanie trybu edit (Panel narzędziowy → Tryb edycji),
 4. Redagowanie współrzędnych wierzchołków poprzez przeciąganie,
 5. Zapis wyników (Plik → Zapisz współrzędne (tekstowy)).
 
@@ -415,7 +415,7 @@ public static Graph loadGraph(String path) throws IOException {
 
 Wyjaśnienie:
 
-- wczytanie jest jedno przebiegowe (w zasadzie w Java łatwiej niż w C),
+- wczytanie jest jedno przebiegowe,
 - ignorowanie komentarzy (linie zaczynające się od `#`),
 - automatyczne sortowanie wierzchołków po ID,
 - mapowanie identyfikatorów na indeksy w tablicy.
@@ -594,10 +594,10 @@ Rola: implementacja algorytmu Fruchterman-Reingold.
 Opis pól:
 
 - `size: double` - rozmiar obszaru layoutu,
-- `area: double` - pole obszaru layoutu (size $*$ size),
-- `k: double` - stała odpychania: $k = sqrt(a r e a / n)$,
+- `area: double` - pole obszaru layoutu ($"size"^2$),
+- `k: double` - stała odpychania: $k = sqrt("area" / max(1, "nodeCount"))$,
 - `iterations: int` - liczba iteracji,
-- `initialTemperature: double` - temperatura początkowa: $T_0 = s i z e / 10$,
+- `initialTemperature: double` - temperatura początkowa: $T_0 = "size" / 10$,
 - `temperature: double` - temperatura aktualna,
 - `random: Random` - generator liczb losowych.
 
@@ -614,7 +614,7 @@ Główne metody:
 
 Algorytm:
 
-1. Inicjalizacja losowych pozycji wierzchołków w obszarze $[0, s i z e] times [0, s i z e]$,
+1. Inicjalizacja losowych pozycji wierzchołków w obszarze $[0, "size"] times [0, "size"]$,
 2. Dla każdej iteracji:
    a. Resetowanie przemieszczeń,
    b. Dla każdej pary wierzchołków: obliczenie i zastosowanie siły odpychającej,
@@ -702,8 +702,8 @@ Wyjaśnienie wzorów:
 
 - Siła odpychająca: $F_r(d) = k^2 / d$,
 - Siła przyciągająca: $F_a(d) = d^2 / k$,
-- Przesunięcie (displacement): $Delta = text{s i g n}(F) \cdot min(|F|, T)$,
-- Temperatura maleje w każdej iteracji: $T ← T \cdot (1 - i/text{i t e r a t i o n s})$ (cooling schedule).
+- Przesunięcie wierzchołka jest ograniczane przez temperaturę: $Delta = F dot min(abs(F), T)$,
+- Temperatura maleje liniowo w każdej iteracji: $T_i = "initialTemperature" dot (1 - i / "iterations")$.
 
 == Moduł `Tutte`
 
@@ -716,15 +716,15 @@ Główne metody statyczne:
 - `findBoundaryCyclePerimeter(AdjacencyList): int[]` - heurystyka znalezienia obwodu,
 - `placeBoundaryOnUnitCircle(Graph, int[]): void` - rozmieszczenie brzegu na okręgu jednostkowym,
 - `gaussianElimination(double[][], double[]): double[]` - rozwiązanie układu liniowego,
-- `scaleGraph(Graph, double): void` - skalowanie grafu do obszaru $[0, s i z e] times [0, s i z e]$.
+ - `scaleGraph(Graph, double): void` - skalowanie grafu do obszaru $[0, "size"] times [0, "size"]$.
 
 Algorytm:
 
 1. Znalezienie cyklu brzegowego grafu (heurystyka perimetru lub DFS),
 2. Rozmieszczenie wierzchołków brzegowych na okręgu jednostkowym,
-3. Dla każdego wierzchołka wewnętrznego: $v = frac{1}{deg(v)} sum_{u \in N(v)} u$,
+3. Dla każdego wierzchołka wewnętrznego: $v = frac(1, deg(v)) dot sum_(u in N(v)) u$,
 4. Rozwiązanie układu liniowego $L_I x = b_x$ i $L_I y = b_y$ (gdzie $L_I$ to zredukowana macierz Laplace'a),
-5. Skalowanie wyniku do obszaru $[0, s i z e] times [0, s i z e]$.
+5. Skalowanie wyniku do obszaru $[0, "size"] times [0, "size"]$.
 
 Fragment kodujący budowę macierzy Laplace'a:
 
@@ -911,6 +911,8 @@ Przykład:
 ```
 
 Precyzja: 6 miejsc po przecinku (ustawienie Locale.ROOT dla konsystentności między platformami).
+
+#pagebreak()
 
 == Wyjście binarne
 
