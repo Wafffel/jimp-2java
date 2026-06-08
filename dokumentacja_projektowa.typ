@@ -178,7 +178,7 @@ Projekt Java zawiera następujące główne moduły:
 == Diagram klas UML
 
 #figure(
-    image("uml_class_diagram.svg", width: 100%),
+    image("uml_class_diagram.png", width: 100%),
   caption: [Diagram klas UML],
 )
 
